@@ -109,7 +109,7 @@ The following is a list of functionality we wish to implement in this library
 (or in another library we would depend on), but do not believe any current
 package available in the ecosystem properly provides.
 
-* FIXME
+* A `Display` typeclass, so we stop abusing `Show` for user-friendly output
 
 ## Interesting differences
 
