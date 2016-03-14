@@ -93,10 +93,12 @@ are still best-in-class package. These are:
 * [wai](https://www.stackage.org/package/wai)
 * [warp](https://www.stackage.org/package/warp)
 
-* TODO: Flesh out these lists more fully
-* TODO: Should we include a short description of functionality next to each
+### TODOs
+
+* Flesh out these lists more fully
+* Should we include a short description of functionality next to each
   package?
-* TODO: Prior art.  Let's collect here prior art on such "recommended package"
+* Prior art.  Let's collect here prior art on such "recommended package"
   lists and see which ones can be promoted here:
     * https://haskelliseasy.readthedocs.org/en/latest/
     * https://www.schoolofhaskell.com/user/snoyberg/ide-documentation/recommended-libraries
