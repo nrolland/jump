@@ -102,6 +102,7 @@ are still best-in-class package. These are:
   lists and see which ones can be promoted here:
     * https://haskelliseasy.readthedocs.org/en/latest/
     * https://www.schoolofhaskell.com/user/snoyberg/ide-documentation/recommended-libraries
+    * https://github.com/Gabriel439/post-rfc/blob/master/sotu.md
 
 ## Desired functionality
 
