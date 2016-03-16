@@ -12,7 +12,6 @@
 module Jump
     ( module Start
 
-    , module Jump.IO
     , module Jump.Lens
     , module Jump.Trans
     , module Jump.Vector
@@ -20,7 +19,6 @@ module Jump
 
 import Start
 
-import Jump.IO
 import Jump.Lens
 import Jump.Trans
 import Jump.Vector

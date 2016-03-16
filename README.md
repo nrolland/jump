@@ -80,6 +80,7 @@ their functionality exported here.  These are:
 * async
 * bytestring
 * containers
+* exceptions
 * mtl
 * stm
 * text
