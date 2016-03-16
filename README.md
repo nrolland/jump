@@ -78,9 +78,11 @@ may also be used when developing this package as dependencies, and may have
 their functionality exported here.  These are:
 
 * async
+* bytestring
 * containers
 * mtl
 * stm
+* text
 * transformers
 * unordered-containers
 * vector

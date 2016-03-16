@@ -11,6 +11,7 @@ category:            Data
 build-type:          Simple
 extra-source-files:  README.md
                      ChangeLog.md
+                     doc/*.md
 cabal-version:       >=1.10
 
 library
