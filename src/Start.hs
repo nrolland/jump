@@ -191,6 +191,7 @@ module Start
     , Control.Monad.unless
     , (Control.Monad.<$!>)
       -- ** Transformers
+    , Data.Functor.Identity.Identity (..)
     , Control.Monad.Reader.MonadTrans (..)
     , Control.Monad.Reader.MonadIO (..)
     , Control.Monad.Reader.MonadReader (..)
@@ -198,6 +199,8 @@ module Start
     , Control.Monad.Writer.MonadWriter (..)
     , Control.Monad.State.Strict.MonadState (..)
     , Control.Monad.State.Strict.StateT (..)
+    , Control.Monad.State.Strict.execStateT
+    , Control.Monad.State.Strict.evalStateT
       -- ** Exceptions
     , Control.Exception.Exception (..)
     , Data.Typeable.Typeable
@@ -319,6 +322,7 @@ import qualified Data.Sequence
 import qualified Data.String
 import qualified Data.ByteString
 import qualified System.IO
+import qualified Data.Functor.Identity
 
 type LText = Data.Text.Lazy.Text
 type LByteString = Data.ByteString.Lazy.ByteString

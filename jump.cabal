@@ -26,10 +26,12 @@ library
                      , bytestring
                      , containers
                      , exceptions
+                     , fail
                      , filepath
                      , hashable
                      , mtl
                      , text
+                     , transformers
                      , unordered-containers
                      , vector
   default-language:    Haskell2010
