@@ -114,6 +114,8 @@ The following is a list of functionality we wish to implement in this library
 package available in the ecosystem properly provides.
 
 * A `Display` typeclass, so we stop abusing `Show` for user-friendly output
+* Random number generation
+* High quality numerics
 
 ## Interesting differences
 

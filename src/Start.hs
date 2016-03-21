@@ -277,6 +277,25 @@ module Start
     , Prelude.String
       -- ** Hashing
     , Data.Hashable.Hashable (..)
+      -- ** Mutable references
+    , module Control.Concurrent.MVar.Lifted
+    , module Control.Concurrent.Chan.Lifted
+    , module Control.Concurrent.STM
+    , atomically
+    , alwaysSTM
+    , alwaysSucceedsSTM
+    , retrySTM
+    , orElseSTM
+    , checkSTM
+    , module Data.IORef.Lifted
+      -- ** Concurrency
+    , Control.Concurrent.Async.race
+    , Control.Concurrent.Async.race_
+    , Control.Concurrent.Async.concurrently
+    , Control.Concurrent.Async.Concurrently (..)
+      -- ** Void
+    , Data.Void.Void
+    , Data.Void.absurd
     ) where
 
 import qualified System.FilePath
@@ -323,6 +342,13 @@ import qualified Data.String
 import qualified Data.ByteString
 import qualified System.IO
 import qualified Data.Functor.Identity
+import Control.Concurrent.MVar.Lifted
+import Control.Concurrent.Chan.Lifted
+import qualified Control.Concurrent.STM as STM
+import Control.Concurrent.STM hiding (atomically, always, alwaysSucceeds, retry, orElse, check)
+import Data.IORef.Lifted
+import qualified Control.Concurrent.Async
+import qualified Data.Void
 
 type LText = Data.Text.Lazy.Text
 type LByteString = Data.ByteString.Lazy.ByteString
@@ -386,3 +412,32 @@ product = Data.Foldable.foldl' (Prelude.*) 1
 decodeUtf8 :: Data.ByteString.ByteString -> Data.Text.Text
 decodeUtf8 = Data.Text.Encoding.decodeUtf8With
              Data.Text.Encoding.Error.lenientDecode
+
+-- | Generalized version of 'STM.atomically'.
+atomically :: Control.Monad.State.Strict.MonadIO m => STM.STM a -> m a
+atomically = Control.Monad.State.Strict.liftIO Prelude.. STM.atomically
+
+-- | Synonym for 'STM.retry'.
+retrySTM :: STM.STM a
+retrySTM = STM.retry
+{-# INLINE retrySTM #-}
+
+-- | Synonym for 'STM.always'.
+alwaysSTM :: STM.STM Prelude.Bool -> STM.STM ()
+alwaysSTM = STM.always
+{-# INLINE alwaysSTM #-}
+
+-- | Synonym for 'STM.alwaysSucceeds'.
+alwaysSucceedsSTM :: STM.STM a -> STM.STM ()
+alwaysSucceedsSTM = STM.alwaysSucceeds
+{-# INLINE alwaysSucceedsSTM #-}
+
+-- | Synonym for 'STM.orElse'.
+orElseSTM :: STM.STM a -> STM.STM a -> STM.STM a
+orElseSTM = STM.orElse
+{-# INLINE orElseSTM #-}
+
+-- | Synonym for 'STM.check'.
+checkSTM :: Prelude.Bool -> STM.STM ()
+checkSTM = STM.check
+{-# INLINE checkSTM #-}

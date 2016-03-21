@@ -19,17 +19,20 @@ library
   exposed-modules:     Jump
 
                        Jump.Lens
+                       Jump.Map
                        Jump.Trans
-                       Jump.Vector
   other-modules:       Start
   build-depends:       base >= 4.7 && < 5
+                     , async
                      , bytestring
                      , containers
                      , exceptions
                      , fail
                      , filepath
                      , hashable
+                     , lifted-base
                      , mtl
+                     , stm
                      , text
                      , transformers
                      , unordered-containers

@@ -13,12 +13,12 @@ module Jump
     ( module Start
 
     , module Jump.Lens
+    , module Jump.Map
     , module Jump.Trans
-    , module Jump.Vector
     ) where
 
 import Start
 
 import Jump.Lens
+import Jump.Map hiding (toList, mapMaybe)
 import Jump.Trans
-import Jump.Vector
