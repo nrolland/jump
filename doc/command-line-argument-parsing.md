@@ -84,7 +84,7 @@ main = do
 
 deleteThing = putStrLn "Deleted the thing!"
 
-createThing name = putStrLn (concat ["Created the thing named ", name])
+createThing name = putStrLn ("Created the thing named " ++ name)
 ```
 
 Now you can pass the arguments `create foo`, and the output will be `The global
@@ -101,8 +101,8 @@ of possibilities by separating them with `<|>`. For example, `(strOption (long
 "foo") <|> strOption (long "bar"))` requires either the `--foo` _or_ `--bar`
 option.
 
-Parsing a other option types
-----------------------------
+Parsing other option types
+--------------------------
 
 So far, we have used `strOption` to parse a simple String option, but this will
 not work if your option has a different datatype such as `Int`. For this case,
@@ -115,24 +115,26 @@ parsing. For example, this will parse a date in the "Jun 12, 1977" format:
 ```haskell
 import Data.Time
 
-day = eitherReader $ \arg ->
+dayReader :: ReadM Day
+dayReader = eitherReader $ \arg ->
     case parseTimeM True defaultTimeLocale "%b %d, %Y" arg of
         Nothing -> Left ("Cannot parse date: " ++ arg)
         Just day -> Right day
 ```
 
-Then use `option day (long "some-date")` for the option parser.
+Then use `option dayReader (long "some-date")` for the option parser.
 
 For options of type `Text`, you have to do things a bit differently. Using
 `option auto` would require quotes around the argument value (which, in a shell,
 means escaping the quotes like `\"text\"`) since that's what the Read
 instance expects. Instead, use the parser's Functor instance to pack a regular
 String to Text. For example, `fmap T.pack (strOption (long "some-text"))`.
-Better yet, define your own `textOption`:
+Better yet, define `textOption`:
 
 ```haskell
 import qualified Data.Text as T
 
+textOption :: Mod OptionFields String -> Parser T.Text
 textOption = fmap T.pack . strOption
 ```
 
@@ -166,9 +168,9 @@ import Options.Applicative.Simple
 import Paths_optparse_example (version)
 
 main = do
-    (str,()) <- simpleOptions $(simpleVersion version) "head" "desc"
+    (s,()) <- simpleOptions $(simpleVersion version) "head" "desc"
                     (strArgument mempty) empty
-    print str
+    print s
 ```
 
 Now the `--version` output looks like this: `Version 0.1.0.0, Git revision
