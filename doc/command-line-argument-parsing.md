@@ -176,8 +176,8 @@ main = do
 Now the `--version` output looks like this: `Version 0.1.0.0, Git revision
 9cc1dbd020c2a42e2bd93204d517470c5781bbf2`.
 
-Using Auto-completion
----------------------
+Using bash auto-completion
+--------------------------
 
 Every program using optparse-applicative gets hidden arguments to support bash
 auto-completion. For your own personal use, you run this or add it this to your

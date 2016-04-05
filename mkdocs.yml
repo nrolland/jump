@@ -1,0 +1,16 @@
+site_name: Haskell Jump
+site_description: Jump start your Haskell development
+site_author: Commercial Haskell SIG
+repo_url: https://github.com/commercialhaskell/jump/tree/master
+copyright: Copyright (c) 2016, Jump contributors
+docs_dir: .
+site_dir: _site
+theme: readthedocs
+
+pages:
+- Home: README.md
+- Change log: ChangeLog.md
+- Documentation:
+  - Command-line argument parsing: doc/command-line-argument-parsing.md
+  - Language extensions: doc/language-extensions.md
+  - Type classes: doc/type-classes.md
