@@ -1,10 +1,16 @@
+Better exception messages
+=========================
+
+*If this is your first time reading a Jump tutorial, consider reading the [Jump
+tutorial tips](https://github.com/commercialhaskell/jump/blob/master/TIPS.md).*
+
 Let's write a really silly, highly inefficient (my favorite kind!) program that
 connects to multiple HTTP servers and sends a very simple request. Using the
 network package, this is really straightforward:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package network -- -Wall -Werror
+-- stack --install-ghc --resolver lts-5.10 runghc --package network -- -Wall -Werror
 import Control.Monad (forM, forM_)
 import Network       (PortID (PortNumber), PortNumber, connectTo)
 import System.IO     (hClose, hPutStrLn)
@@ -55,7 +61,7 @@ from `connectTo`:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package network -- -Wall -Werror
+-- stack --install-ghc --resolver lts-5.10 runghc --package network -- -Wall -Werror
 {-# LANGUAGE DeriveDataTypeable #-}
 import Control.Exception (Exception, IOException, catch, throwIO)
 import Control.Monad     (forM, forM_)

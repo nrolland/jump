@@ -1,3 +1,9 @@
+http-client
+===========
+
+*If this is your first time reading a Jump tutorial, consider reading the [Jump
+tutorial tips](https://github.com/commercialhaskell/jump/blob/master/TIPS.md).*
+
 We'll be using the [http-client](https://www.stackage.org/package/http-client)
 library as the base for making HTTP requests.  http-client itself is a
 minimalistic package with a relatively low-level API and no support for TLS
@@ -34,7 +40,7 @@ There are a few important caveats to mention about this library:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS   (tlsManagerSettings)
 import Network.HTTP.Types.Status (statusCode)
@@ -65,7 +71,7 @@ stream the response:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 import qualified Data.ByteString           as S
 import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS   (tlsManagerSettings)
@@ -97,7 +103,7 @@ be useful for these situations:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-conduit
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-conduit
 import qualified Data.ByteString             as S
 import           Data.Conduit                (($$))
 import qualified Data.Conduit.List           as CL
@@ -127,7 +133,7 @@ It's also straightforward to compose this streaming with aeson to parse JSON:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-conduit --package aeson
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-conduit --package aeson
 import           Data.Aeson.Parser           (json)
 import           Data.Conduit                (($$))
 import           Data.Conduit.Attoparsec     (sinkParser)
@@ -161,7 +167,7 @@ Sending JSON can be done with modifying the request method and body:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls --package aeson
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls --package aeson
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Aeson                 (encode, object, (.=))
 import qualified Data.ByteString.Lazy.Char8 as L8
@@ -201,7 +207,7 @@ sets the request method to `POST`, which we can override if desired:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 {-# LANGUAGE OverloadedStrings #-}
 import qualified Data.ByteString.Lazy.Char8 as L8
 import           Network.HTTP.Client
@@ -235,7 +241,7 @@ rewriting the previous example:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 {-# LANGUAGE OverloadedStrings #-}
 import qualified Data.ByteString.Lazy.Char8 as L8
 import           Network.HTTP.Client
@@ -265,7 +271,7 @@ a runtime exception when forcing the pure `Request` value, e.g.:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 {-# LANGUAGE OverloadedStrings #-}
 import qualified Data.ByteString.Lazy.Char8 as L8
 import           Network.HTTP.Client
@@ -296,7 +302,7 @@ The code below will never throw exceptions based on the status code.
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 {-# LANGUAGE OverloadedStrings #-}
 import qualified Data.ByteString.Lazy.Char8 as L8
 import           Network.HTTP.Client
@@ -332,7 +338,7 @@ as due to failed connections. To catch these, you should catch the
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 {-# LANGUAGE OverloadedStrings #-}
 import           Control.Exception          (try)
 import qualified Data.ByteString.Lazy.Char8 as L8
@@ -361,7 +367,7 @@ environment variables. You can modify this when creating your `Manager`:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 {-# LANGUAGE OverloadedStrings #-}
 import qualified Data.ByteString.Lazy.Char8 as L8
 import           Network.HTTP.Client
@@ -383,7 +389,7 @@ You can also modify the proxy settings per-request:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
 {-# LANGUAGE OverloadedStrings #-}
 import qualified Data.ByteString.Lazy.Char8 as L8
 import           Network.HTTP.Client
@@ -417,7 +423,7 @@ connections to a single server at once.
 
 ```haskell
 #!/usr/bin/env stack
--- stack --resolver lts-5.10 runghc --package http-client-tls --package async
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls --package async
 {-# LANGUAGE OverloadedStrings #-}
 import           Control.Concurrent.Async  (Concurrently (..))
 import qualified Data.ByteString.Char8     as S8

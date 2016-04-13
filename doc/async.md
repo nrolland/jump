@@ -1,3 +1,9 @@
+The async package
+=================
+
+*If this is your first time reading a Jump tutorial, consider reading the [Jump
+tutorial tips](https://github.com/commercialhaskell/jump/blob/master/TIPS.md).*
+
 The [async package](https://www.stackage.org/package/async) provides
 functionality for performing actions asynchronously, across multiple threads.
 While it's built on top of the `forkIO` function from base (in
@@ -39,6 +45,8 @@ you can get away with `concurrently`/`race`/`Concurrently`, you should.
 ### Basics
 
 ```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package async
 import Control.Concurrent
 import Control.Concurrent.Async
 
@@ -63,6 +71,8 @@ complete, and then returns both results in a tuple. In contrast, the `race`
 function returns only the first one to complete:
 
 ```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package async
 import Control.Concurrent
 import Control.Concurrent.Async
 
@@ -90,6 +100,8 @@ instance. We can demonstrate that, though the code will be quite a bit more
 verbose:
 
 ```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package async
 import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -121,6 +133,8 @@ While this seems tedious for such an example, the `Concurrently` newtype can be
 great for larger scale cases, such as when we want to discard some results.
 
 ```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package async
 import Control.Concurrent.Async
 import Data.Foldable (traverse_)
 
@@ -157,6 +171,8 @@ When either child thread throws an exception, that exception is thrown to the
 other thread:
 
 ```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package async
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Exception
@@ -193,6 +209,8 @@ There's a neat trick you can accomplish with `race` when you want a companion
 thread to continue running as long as the main thread is in operation:
 
 ```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package async
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Exception
@@ -251,6 +269,8 @@ instead. Using the powerful (and complex) monad-control package, we can capture
 the monadic state to make this work.
 
 ```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package async
 {-# LANGUAGE FlexibleContexts #-}
 import Control.Concurrent
 import Control.Concurrent.Async

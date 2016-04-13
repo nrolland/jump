@@ -1,6 +1,9 @@
 Command-line argument parsing
 =============================
 
+*If this is your first time reading a Jump tutorial, consider reading the [Jump
+tutorial tips](https://github.com/commercialhaskell/jump/blob/master/TIPS.md).*
+
 For command-line argument parsing, we recommend the
 [optparse-simple](https://www.stackage.org/package/optparse-simple) package.
 This is actually a wrapper the around the powerful
