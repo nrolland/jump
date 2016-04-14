@@ -380,62 +380,23 @@ stream the response:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
-import qualified Data.ByteString           as S
-import           Network.HTTP.Client
-import           Network.HTTP.Client.TLS   (tlsManagerSettings)
-import           Network.HTTP.Types.Status (statusCode)
-import           System.IO                 (stdout)
-
-main :: IO ()
-main = do
-    manager <- newManager tlsManagerSettings
-
-    request <- parseUrl "http://httpbin.org/get"
-
-    withResponse request manager $ \response -> do
-        putStrLn $ "The status code was: " ++
-                   show (statusCode $ responseStatus response)
-
-        let loop = do
-                bs <- brRead $ responseBody response
-                if S.null bs
-                    then putStrLn "\nFinished response body"
-                    else do
-                        S.hPut stdout bs
-                        loop
-        loop
-```
-
-Streaming at this kind of low-level can be difficult, so using http-conduit can
-be useful for these situations:
-
-```haskell
-#!/usr/bin/env stack
 {- stack --install-ghc --resolver lts-5.10 runghc
-   --package http-conduit --package yaml
+   --package http-conduit
  -}
-import qualified Data.ByteString             as S
-import           Data.Conduit                (($$))
-import qualified Data.Conduit.List           as CL
-import           Network.HTTP.Client
-import           Network.HTTP.Client.Conduit (bodyReaderSource)
-import           Network.HTTP.Client.TLS     (tlsManagerSettings)
-import           Network.HTTP.Types.Status   (statusCode)
-import           System.IO                   (stdout)
+{-# LANGUAGE OverloadedStrings #-}
+import           Control.Monad.IO.Class (liftIO)
+import qualified Data.ByteString        as S
+import qualified Data.Conduit.List      as CL
+import           Network.HTTP.Simple
+import           System.IO              (stdout)
 
 main :: IO ()
-main = do
-    manager <- newManager tlsManagerSettings
+main = httpSink "http://httpbin.org/get" $ \response -> do
+    liftIO $ putStrLn
+           $ "The status code was: "
+          ++ show (getResponseStatusCode response)
 
-    request <- parseUrl "http://httpbin.org/get"
-
-    withResponse request manager $ \response -> do
-        putStrLn $ "The status code was: " ++
-                   show (statusCode $ responseStatus response)
-
-        bodyReaderSource (responseBody response)
-            $$ CL.mapM_ (S.hPut stdout)
+    CL.mapM_ (S.hPut stdout)
 ```
 
 ## Override proxy
@@ -803,3 +764,37 @@ doSomething manager = do
     -- output
     S8.putStr msg
 ```
+
+## Streaming
+
+```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
+import qualified Data.ByteString           as S
+import           Network.HTTP.Client
+import           Network.HTTP.Client.TLS   (tlsManagerSettings)
+import           Network.HTTP.Types.Status (statusCode)
+import           System.IO                 (stdout)
+
+main :: IO ()
+main = do
+    manager <- newManager tlsManagerSettings
+
+    request <- parseUrl "http://httpbin.org/get"
+
+    withResponse request manager $ \response -> do
+        putStrLn $ "The status code was: " ++
+                   show (statusCode $ responseStatus response)
+
+        let loop = do
+                bs <- brRead $ responseBody response
+                if S.null bs
+                    then putStrLn "\nFinished response body"
+                    else do
+                        S.hPut stdout bs
+                        loop
+        loop
+```
+
+Streaming at this kind of low-level can be difficult, so using http-conduit can
+be useful for these situations:
