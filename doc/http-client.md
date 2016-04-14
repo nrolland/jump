@@ -1,6 +1,8 @@
 http-client
 ===========
 
+FIXME: Update to newer LTS once new version of http-conduit is released
+
 *If this is your first time reading a Jump tutorial, consider reading the [Jump
 tutorial tips](https://github.com/commercialhaskell/jump/blob/master/TIPS.md).*
 
@@ -14,24 +16,23 @@ e.g.:
 * [http-conduit](https://www.stackage.org/package/http-conduit) allows for streaming request and responses using conduit
 
 In this tutorial, we'll be using these packages together as one library for
-making HTTP client requests.
+making HTTP client requests. We'll start by focusing on the high-level
+`Network.HTTP.Simple` API, and then expose some of the details of the
+lower-level APIs.
 
 ## Concepts
 
-All HTTP requests are made via a `Manager`. A `Manager` handles the details of
-creating connections to servers. It handles things like reusing connections (to
-avoid high TCP overhead when making multiple requests to the same host). It
-also allows you to configure various settings, most important how to make
-secure connections (HTTPS). For our purposes, you should use
-`tlsManagerSettings` to ensure you have full HTTP and HTTPS support (as all
-examples below do).
+This library makes good use of the `OverloadedStrings` language extension for
+converting string literals into `Request`s, `ByteString`s, and case-insensitive
+`ByteString`s (for header names). It's strongly recommended to use this library
+with this language extension enabled.
 
 ## Caveats
 
 There are a few important caveats to mention about this library:
 
 * By default, any non-2XX status code response results in a runtime exception.
-  See the examples of `checkStatus` below for more information
+  See the examples of `setRequestIgnoreStatus` below for more information
 * By default, http-client will respect the `http_proxy` and `https_proxy`
   environment variables. See the proxy examples below for information on how to
   bypass this.
@@ -40,29 +41,337 @@ There are a few important caveats to mention about this library:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
-import Network.HTTP.Client
-import Network.HTTP.Client.TLS   (tlsManagerSettings)
-import Network.HTTP.Types.Status (statusCode)
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-conduit
+{-# LANGUAGE OverloadedStrings #-}
+import qualified Data.ByteString.Lazy.Char8 as L8
+import           Network.HTTP.Simple
 
 main :: IO ()
 main = do
-    manager <- newManager tlsManagerSettings
-
-    request <- parseUrl "http://httpbin.org/get"
-    response <- httpLbs request manager
+    response <- httpLBS "http://httpbin.org/get"
 
     putStrLn $ "The status code was: " ++
-               show (statusCode $ responseStatus response)
-    print $ responseBody response
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    L8.putStrLn $ getResponseBody response
 ```
 
-We're using `newManager tlsManagerSettings` to get a new `Manager`, `parseUrl`
-to parse a textual URL into a `Request`, and then making the request with
-`httpLbs`. Once we have our `Response`, we can use standard accessors to
-inspect its fields. 
+`httpLBS` makes a request to the given URL and captures the response body as a
+lazy `ByteString`. Note that, even though this is a lazy `ByteString`, it is
+read fully into memory when making the request. It only returns a lazy
+`ByteString` for better memory usage. (See streaming below for more information.)
+
+Once we have our response value, we can use getter functions to look at various
+details (status code, headers, and the body).
+
+## Receiving JSON
+
+We can also leverage aeson to receive a JSON message.
+
+```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-conduit
+{-# LANGUAGE OverloadedStrings #-}
+import           Data.Aeson            (Value)
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.Yaml             as Yaml
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    response <- httpJSON "http://httpbin.org/get"
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+```
+
+The main change is that we used `httpJSON` in place of `httpLBS`. This function
+will return any instance of `FromJSON`, and perform all necessary parsing and
+conversion. If there are any problems, it will throw a runtime exception (use
+`httpJSONEither` to avoid the runtime exception and get an `Either`).
+
+Since the return value can be any `FromJSON` instance, we need to somehow
+constrain the value returned. In this case, we used an explicit `:: Value`
+signature, but usually you'll do the constraining by using a custom data type.
+
+For fun, this example prints out the JSON body in YAML format.
+
+## Request methods and parseRequest
+
+You can specify the request method at the beginning of your URL:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import           Data.Aeson            (Value)
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.Yaml             as Yaml
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    response <- httpJSON "POST http://httpbin.org/post"
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+```
+
+What's actually happening is that the `IsString` instance for `Request` is
+being leveraged to parse the string literal to a `Request`. But you can also be
+more explicit about it with `parseRequest`:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import           Data.Aeson            (Value)
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.Yaml             as Yaml
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    request <- parseRequest "POST http://httpbin.org/post"
+    response <- httpJSON request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+```
+
+`parseRequest` is more explicit about exceptions, whereas the string literal
+approach can result in unexpected runtime exceptions if you have a typo in your
+code. Generally, `parseRequest` should be your choice when parsing URLs
+generated at runtime.
+
+CAUTION: If you provide an invalid URL as a string literal, it will manifest as
+a runtime exception when forcing the pure `Request` value, e.g.:
+
+```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-conduit
+{-# LANGUAGE OverloadedStrings #-}
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    response <- httpLBS "BAD URL"
+    print response
+```
+
+generates:
+
+```
+foo.hs: InvalidUrlException "BAD URL" "Invalid URL"
+```
+
+## Request building
+
+There's a lot more to a request than just the request method. These can be
+modified with various request setter functions:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import           Data.Aeson            (Value)
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.Yaml             as Yaml
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    request' <- parseRequest "POST http://httpbin.org/post"
+    let request
+            = setRequestMethod "PUT"
+            $ setRequestPath "/put"
+            $ setRequestQueryString [("hello", Just "world")]
+            $ setRequestBodyLBS "This is my request body"
+            $ setRequestSecure True
+            $ setRequestPort 443
+            $ request'
+    response <- httpJSON request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+```
+
+Exercise for reader: rewrite the code above to not use `parseRequest`.
+
+And in fact, if you want, you can build up a request entirely programmatically,
+without any URL parsing:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import           Data.Aeson            (Value)
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.Yaml             as Yaml
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    let request
+            = setRequestPath "/get"
+            $ setRequestHost "httpbin.org"
+            $ defaultRequest
+    response <- httpJSON request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+```
+
+## Request bodies
+
+Like the response body, there are multiple helper functions for dealing with
+different request body formats. These include JSON:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import           Data.Aeson
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.Yaml             as Yaml
+import           Network.HTTP.Simple
+
+data Person = Person String Int
+instance ToJSON Person where
+    toJSON (Person name age) = object
+        [ "name" .= name
+        , "age"  .= age
+        ]
+
+people :: [Person]
+people = [Person "Alice" 30, Person "Bob" 35, Person "Charlie" 40]
+
+main :: IO ()
+main = do
+    let request = setRequestBodyJSON people $ "POST https://httpbin.org/post"
+    response <- httpJSON request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+```
+
+Or data from a file:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import           Data.Aeson
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.Yaml             as Yaml
+import           Network.HTTP.Simple
+
+data Person = Person String Int
+instance ToJSON Person where
+    toJSON (Person name age) = object
+        [ "name" .= name
+        , "age"  .= age
+        ]
+
+people :: [Person]
+people = [Person "Alice" 30, Person "Bob" 35, Person "Charlie" 40]
+
+main :: IO ()
+main = do
+    Yaml.encodeFile "people.yaml" people
+
+    let request = setRequestBodyFile "people.yaml"
+                $ setRequestHeader "Content-Type" ["application/x-yaml"]
+                $ "PUT https://httpbin.org/put"
+    response <- httpJSON request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+```
+
+## Non-2XX responses
+
+By default, every request that generates a non-2XX response will generate a
+runtime exception. If instead you would like to deal with these responses
+directly, you can change that behavior:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import qualified Data.ByteString.Lazy.Char8 as L8
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    let request = setRequestIgnoreStatus "PUT https://httpbin.org/delete"
+    response <- httpLBS request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    L8.putStrLn $ getResponseBody response
+```
+
+NOTE: The decision to turn non-2XX responses into exceptions is one of the most
+controversial decisions in this library, with strong arguments on each side. At
+this point, the behavior is well established and won't be changing in the
+future.
+
+## Exceptions
+
+There are other potential exceptions that may be thrown by this library, such
+as due to failed connections. To catch these, you should catch the
+`HttpException` exception type.
+
+```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-conduit
+{-# LANGUAGE OverloadedStrings #-}
+import           Control.Exception          (try)
+import qualified Data.ByteString.Lazy.Char8 as L8
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    eresponse <- try $ httpLBS "http://does-not-exist"
+
+    case eresponse of
+        Left e -> print (e :: HttpException)
+        Right response -> L8.putStrLn $ getResponseBody response
+```
 
 ## Streaming
+
+FIXME
 
 `httpLbs` means "HTTP + lazy ByteString." Despite that implication, the
 response body is _not_ lazily consumed; the lazy ByteString is just used for a
@@ -103,7 +412,9 @@ be useful for these situations:
 
 ```haskell
 #!/usr/bin/env stack
--- stack --install-ghc --resolver lts-5.10 runghc --package http-conduit
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
 import qualified Data.ByteString             as S
 import           Data.Conduit                (($$))
 import qualified Data.Conduit.List           as CL
@@ -126,6 +437,134 @@ main = do
         bodyReaderSource (responseBody response)
             $$ CL.mapM_ (S.hPut stdout)
 ```
+
+## Override proxy
+
+By default, requests will use any proxy server specified with the `http_proxy`
+or `https_proxy` environment variables. This can be overridden:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import qualified Data.ByteString.Lazy.Char8 as L8
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    let request = setRequestProxy (Just (Proxy "127.0.0.1" 3128))
+                $ "https://httpbin.org/get"
+    response <- httpLBS request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    L8.putStrLn $ getResponseBody response
+```
+
+## Connection Manager
+
+All HTTP requests are made via a `Manager`. A `Manager` handles the details of
+creating connections to servers. It handles things like reusing connections (to
+avoid high TCP overhead when making multiple requests to the same host). It
+also allows you to configure various settings, most important how to make
+secure connections (HTTPS).
+
+For ease of use and to ensure maximum connection sharing in an application, the
+`Network.HTTP.Simple` module uses a shared global connection `Manager` by
+default. If desired, you can create your own `Manager` and override that
+global:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import qualified Data.ByteString.Lazy.Char8 as L8
+import           Network.HTTP.Client        (defaultManagerSettings, newManager)
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    manager <- newManager defaultManagerSettings
+
+    let request = setRequestManager manager "http://httpbin.org/get"
+    response <- httpLBS request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    L8.putStrLn $ getResponseBody response
+```
+
+Exercises:
+
+1. Modify the above to make an HTTPS connection instead. What happens?
+2. Fix the error generated by the previous step by using
+   `Network.HTTP.Client.TLS.tlsManagerSettings`
+
+You can also override the global manager if, for example, you want to tweak
+some settings:
+
+```haskell
+#!/usr/bin/env stack
+{- stack --install-ghc --resolver lts-5.10 runghc
+   --package http-conduit --package yaml
+ -}
+{-# LANGUAGE OverloadedStrings #-}
+import qualified Data.ByteString.Lazy.Char8 as L8
+import           Network.HTTP.Client
+import           Network.HTTP.Client.TLS
+import           Network.HTTP.Simple
+
+main :: IO ()
+main = do
+    manager <- newManager $ managerSetProxy noProxy tlsManagerSettings
+    setGlobalManager manager
+
+    let request = "http://httpbin.org/get"
+    response <- httpLBS request
+
+    putStrLn $ "The status code was: " ++
+               show (getResponseStatusCode response)
+    print $ getResponseHeader "Content-Type" response
+    L8.putStrLn $ getResponseBody response
+
+For our purposes, you should use
+`tlsManagerSettings` to ensure you have full HTTP and HTTPS support (as all
+examples below do).
+```
+
+# FIXME continue editing below here
+
+## Lower level API
+
+```haskell
+#!/usr/bin/env stack
+-- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
+import Network.HTTP.Client
+import Network.HTTP.Client.TLS   (tlsManagerSettings)
+import Network.HTTP.Types.Status (statusCode)
+
+main :: IO ()
+main = do
+    manager <- newManager tlsManagerSettings
+
+    request <- parseUrl "http://httpbin.org/get"
+    response <- httpLbs request manager
+
+    putStrLn $ "The status code was: " ++
+               show (statusCode $ responseStatus response)
+    print $ responseBody response
+```
+
+We're using `newManager tlsManagerSettings` to get a new `Manager`, `parseUrl`
+to parse a textual URL into a `Request`, and then making the request with
+`httpLbs`. Once we have our `Response`, we can use standard accessors to
+inspect its fields. 
 
 ## Receiving JSON
 
@@ -233,67 +672,6 @@ main = do
     L8.putStrLn $ responseBody response
 ```
 
-## IsString instance for Request
-
-As an extra convenience, instead of using `parseUrl`, you can turn on
-`OverloadedStrings` and treat a string literal as a `Request`. Let's try
-rewriting the previous example:
-
-```haskell
-#!/usr/bin/env stack
--- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
-{-# LANGUAGE OverloadedStrings #-}
-import qualified Data.ByteString.Lazy.Char8 as L8
-import           Network.HTTP.Client
-import           Network.HTTP.Client.TLS
-import           Network.HTTP.Types.Status  (statusCode)
-
-main :: IO ()
-main = do
-    manager <- newManager tlsManagerSettings
-
-    let pairs =
-            [ ("name", "Alice")
-            , ("age", "35")
-            ]
-        request = (urlEncodedBody pairs "http://httpbin.org/put")
-            { method = "PUT"
-            }
-
-    response <- httpLbs request manager
-    putStrLn $ "The status code was: "
-            ++ show (statusCode $ responseStatus response)
-    L8.putStrLn $ responseBody response
-```
-
-CAUTION: If you provide an invalid URL as a string literal, it will manifest as
-a runtime exception when forcing the pure `Request` value, e.g.:
-
-```haskell
-#!/usr/bin/env stack
--- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
-{-# LANGUAGE OverloadedStrings #-}
-import qualified Data.ByteString.Lazy.Char8 as L8
-import           Network.HTTP.Client
-import           Network.HTTP.Client.TLS
-import           Network.HTTP.Types.Status  (statusCode)
-
-main :: IO ()
-main = do
-    manager <- newManager tlsManagerSettings
-
-    response <- httpLbs "BAD URL" manager
-    putStrLn $ "The status code was: "
-            ++ show (statusCode $ responseStatus response)
-    L8.putStrLn $ responseBody response
-```
-
-generates:
-
-```
-foo.hs: InvalidUrlException "BAD URL" "Invalid URL"
-```
-
 ## Non-2XX responses
 
 By default, a non-2XX response (such as a 404 not found) will generate a
@@ -323,41 +701,6 @@ main = do
     putStrLn $ "The status code was: "
             ++ show (statusCode $ responseStatus response)
     L8.putStrLn $ responseBody response
-```
-
-NOTE: The decision to turn non-2XX responses into exceptions is one of the most
-controversial decisions in this library, with strong arguments on each side. At
-this point, the behavior is well established and won't be changing in the
-future.
-
-## Exceptions
-
-There are other potential exceptions that may be thrown by this library, such
-as due to failed connections. To catch these, you should catch the
-`HttpException` exception type.
-
-```haskell
-#!/usr/bin/env stack
--- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
-{-# LANGUAGE OverloadedStrings #-}
-import           Control.Exception          (try)
-import qualified Data.ByteString.Lazy.Char8 as L8
-import           Network.HTTP.Client
-import           Network.HTTP.Client.TLS
-import           Network.HTTP.Types.Status  (statusCode)
-
-main :: IO ()
-main = do
-    manager <- newManager tlsManagerSettings
-
-    eresponse <- try $ httpLbs "http://does-not-exist" manager
-
-    case eresponse of
-        Left e -> print (e :: HttpException)
-        Right response -> do
-            putStrLn $ "The status code was: "
-                    ++ show (statusCode $ responseStatus response)
-            L8.putStrLn $ responseBody response
 ```
 
 ## Proxy settings
