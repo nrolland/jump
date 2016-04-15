@@ -371,12 +371,8 @@ main = do
 
 ## Streaming
 
-FIXME
-
-`httpLbs` means "HTTP + lazy ByteString." Despite that implication, the
-response body is _not_ lazily consumed; the lazy ByteString is just used for a
-better memory representation. If you want more reliable memory usage, you can
-stream the response:
+Sometimes you will want to avoid reading the entire response body into memory
+at once. For these cases, a streaming data approach is useful.
 
 ```haskell
 #!/usr/bin/env stack
@@ -499,9 +495,12 @@ For our purposes, you should use
 examples below do).
 ```
 
-# FIXME continue editing below here
-
 ## Lower level API
+
+The above docs all cover the `Network.HTTP.Simple` API. However, there is a
+lower-level API available in `Network.HTTP.Client`, which may be advantageous
+in some cases. The rest of this tutorial provides some examples of this
+lower-level API.
 
 ```haskell
 #!/usr/bin/env stack
@@ -557,10 +556,6 @@ main = do
         print value
 ```
 
-NOTE: A rich avenue for future development would be a convenience package for
-doing this kind of parsing automatically. Perhaps it could even be added to
-http-conduit.
-
 ## Sending JSON
 
 Sending JSON can be done with modifying the request method and body:
@@ -598,8 +593,6 @@ main = do
             ++ show (statusCode $ responseStatus response)
     L8.putStrLn $ responseBody response
 ```
-
-NOTE: This is another case where convenience functions could be added.
 
 Another common request body format is URL encoded bodies. The `urlEncodedBody`
 function is a convenient function for doing this. Note that it automatically
@@ -767,6 +760,9 @@ doSomething manager = do
 
 ## Streaming
 
+Beneath the conduit-based streaming API you've already seen, there is a
+lower-level streaming API:
+
 ```haskell
 #!/usr/bin/env stack
 -- stack --install-ghc --resolver lts-5.10 runghc --package http-client-tls
@@ -795,6 +791,3 @@ main = do
                         loop
         loop
 ```
-
-Streaming at this kind of low-level can be difficult, so using http-conduit can
-be useful for these situations:
