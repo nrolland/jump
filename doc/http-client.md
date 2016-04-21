@@ -68,7 +68,7 @@ We can also leverage aeson to receive a JSON message.
 
 ```haskell
 #!/usr/bin/env stack
--- stack --install-ghc --resolver lts-5.13 runghc --package http-conduit
+-- stack --install-ghc --resolver lts-5.13 runghc --package http-conduit --package yaml
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Aeson            (Value)
 import qualified Data.ByteString.Char8 as S8
